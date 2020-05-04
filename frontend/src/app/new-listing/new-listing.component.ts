@@ -27,7 +27,7 @@ export class NewListingComponent implements OnInit {
       let product = {
         name : this.name,
         price : this.price,
-        pictureUrl : this.imageUrl,
+        photoUrl : this.imageUrl,
         owner : this.cookieService.get('username'),
         location : this.cookieService.get('location'),
       };
