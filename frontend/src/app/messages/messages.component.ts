@@ -36,7 +36,7 @@ export class MessagesComponent implements OnInit {
                 userFrom = new UserProfile(user.data()['userId'], user.data()['username'], user.data()['profilePictureUrl'], user.data()['location'], [])
               })
   
-              allMessages.push(new Message(userTo, userFrom, userFrom.location, new Date((message.data()['time'])), message.data()['attachmentUrl']))
+              allMessages.push(new Message(userTo, userFrom, message.data()['messageBody'], message.data()['time'].toDate(), message.data()['attachmentUrl']))
             });
           });
         }
@@ -44,7 +44,14 @@ export class MessagesComponent implements OnInit {
     });
         
     // now filter down to what we want?
-    this.messagePreviews = allMessages;
+
+    // allMessages = 
+
+    let sortedMessages = allMessages.sort((a,b) => a.sentDate.getTime() - b.sentDate.getTime());
+
+    console.log(sortedMessages)
+
+    this.messagePreviews = sortedMessages;
 
 
   }

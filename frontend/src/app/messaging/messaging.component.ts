@@ -4,6 +4,8 @@ import { DataInteractionService } from '../data-interaction.service';
 import { Message } from '../message';
 import { Router } from '@angular/router';
 import { UserProfile } from '../user-profile';
+import { CookieService } from 'ngx-cookie-service';
+import { AngularFirestore } from '@angular/fire/firestore';
 
 @Component({
   selector: 'app-messaging',
@@ -30,7 +32,7 @@ export class MessagingComponent implements OnInit, AfterViewChecked {
   inquiryImage : string;
 
 
-  constructor(private internalInteractionService : InternalInteractionService, private dataInteractionService : DataInteractionService, private router : Router) { }
+  constructor(private cookieService : CookieService, private db : AngularFirestore, private internalInteractionService : InternalInteractionService, private dataInteractionService : DataInteractionService, private router : Router) { }
 
   ngAfterViewChecked(){
     try{
@@ -46,19 +48,54 @@ export class MessagingComponent implements OnInit, AfterViewChecked {
 
     if (this.internalInteractionService.viewingListing != null){
       this.isInquiry = true;
-      console.log(this.internalInteractionService.viewingListing)
       this.inquiryImage = this.internalInteractionService.viewingListing.imageUrl;
     }
 
     // get our messages from the database
     console.log(this.internalInteractionService.viewingUser)
     try {
-      this.messages = this.dataInteractionService.pullMessages(this.internalInteractionService.viewingUser);
+      this.pullMessages();
+      // this.messages = this.dataInteractionService.pullMessages(this.internalInteractionService.viewingUser);
       this.updateMessageArrays();
     } catch {
       this.router.navigateByUrl('messages')
     }
     
+  }
+
+  pullMessages(){
+    this.messages = [];
+    var allMessages = [];
+
+    this.db.collection<any>('messages').ref.get().then(res => {
+      res.forEach(message => {
+
+        if ((message.data()['userFrom'] == this.cookieService.get('username') && message.data()['userTo'] == this.cookieService.get('viewingUserId'))
+        || (message.data()['userTo'] == this.cookieService.get('username')  && message.data()['userFrom'] == this.cookieService.get('viewingUserId'))){
+          var userTo = null;
+          var userFrom = null;
+
+          this.db.collection<any>('users').ref.where('username', '==', message.data()['userTo']).get().then(res => {
+            res.forEach(user => {
+              userTo = new UserProfile(user.data()['userId'], user.data()['username'], user.data()['profilePictureUrl'], user.data()['location'], [])
+            })
+  
+            this.db.collection<any>('users').ref.where('username', '==', message.data()['userFrom']).get().then(res => {
+              res.forEach(user => {
+                userFrom = new UserProfile(user.data()['userId'], user.data()['username'], user.data()['profilePictureUrl'], user.data()['location'], [])
+              })
+  
+              allMessages.push(new Message(userTo, userFrom, message.data()['messageBody'], message.data()['time'].toDate(), message.data()['attachmentUrl']))
+            });
+          });
+        }
+      })
+
+      this.messages = allMessages.sort((b,a) => (a.sentDate - b.sentDate));
+
+    });
+
+
   }
 
   updateMessageArrays(){
@@ -136,18 +173,33 @@ export class MessagingComponent implements OnInit, AfterViewChecked {
   sendMessage(){
     if (this.messageText.trim() != ''){
       if (this.isInquiry){
-        this.dataInteractionService.sendMessage('', this.inquiryImage, this.internalInteractionService.viewingUser);
+        this.sendActualMessage('', this.inquiryImage, this.internalInteractionService.viewingUser);
         this.internalInteractionService.viewingListing = null;
         this.isInquiry = false;
         this.inquiryImage = '';
       }
   
-      this.dataInteractionService.sendMessage(this.messageText, '', this.internalInteractionService.viewingUser);
+      this.sendActualMessage(this.messageText, '', this.internalInteractionService.viewingUser);
       this.messageText = '';
-      this.messages = this.dataInteractionService.pullMessages(this.internalInteractionService.viewingUser);
+      this.pullMessages();
+      // this.messages = this.dataInteractionService.pullMessages(this.internalInteractionService.viewingUser);
 
       this.updateMessageArrays();
     }
+  }
+
+  sendActualMessage(messageText : string, imageUrl : string, recipient : UserProfile){
+    let dbMessage = {
+      userFrom : this.cookieService.get('username'),
+      userTo : recipient.username,
+      time : new Date(),
+      messageBody : messageText,
+      attachmentUrl : imageUrl
+    };
+
+    return new Promise<any>((resolve, reject) => {
+      this.db.collection('messages').add(dbMessage).then(res => {}, err => reject(err));
+    });
   }
 
   back(){

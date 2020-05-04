@@ -207,8 +207,8 @@ export class DataInteractionService {
 
   sendMessage(messageText : string, imageUrl : string, recipient : UserProfile){
     let dbMessage = {
-      userIdFrom : this.internalInteractionService.currentUser.id,
-      userIdTo : recipient.id,
+      userFrom : this.internalInteractionService.currentUser.username,
+      userTo : recipient.username,
       time : new Date(),
       messageBody : messageText,
       attachmentUrl : imageUrl
