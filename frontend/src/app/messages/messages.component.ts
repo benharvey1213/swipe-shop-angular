@@ -19,40 +19,53 @@ export class MessagesComponent implements OnInit {
   ngOnInit(): void {
     var allMessages : Message[] = [];
 
-    this.db.collection<any>('messages').ref.get().then(res => {
+
+    this.db.collection('messages').ref.orderBy('time', 'desc').get().then(res => {
       res.forEach(message => {
-
-        if (message.data()['userFrom'] == this.cookieService.get('username') || message.data()['userTo'] == this.cookieService.get('username')){
-          var userTo = null;
-          var userFrom = null;
-
-          this.db.collection<any>('users').ref.where('username', '==', message.data()['userTo']).get().then(res => {
-            res.forEach(user => {
-              userTo = new UserProfile(user.data()['userId'], user.data()['username'], user.data()['profilePictureUrl'], user.data()['location'], [])
-            })
-  
-            this.db.collection<any>('users').ref.where('username', '==', message.data()['userFrom']).get().then(res => {
-              res.forEach(user => {
-                userFrom = new UserProfile(user.data()['userId'], user.data()['username'], user.data()['profilePictureUrl'], user.data()['location'], [])
-              })
-  
-              allMessages.push(new Message(userTo, userFrom, message.data()['messageBody'], message.data()['time'].toDate(), message.data()['attachmentUrl']))
-            });
+        var toUser;
+        this.db.collection('users').ref.where('username', '==', message.data()['userTo']).get().then(res => {
+          res.forEach(user => {
+            toUser = new UserProfile(user.data()['userId'], user.data()['username'], user.data()['profilePictureUrl'], '', [])
           });
-        }
-      })
-    });
+
+          var fromUser;
+          this.db.collection('users').ref.where('username', '==', message.data()['userFrom']).get().then(res => {
+            res.forEach(user => {
+              fromUser = new UserProfile(user.data()['userId'], user.data()['username'], user.data()['profilePictureUrl'], '', [])
+            });
+
+            if (toUser.username == this.cookieService.get('username') || fromUser.username == this.cookieService.get('username')){
+              let m = new Message(toUser, fromUser, message.data()['messageBody'], message.data()['time'].toDate(), '');
+
+              allMessages.push(m);
+
+              var individualMessages = [];
+
+              allMessages.forEach((message) => {
+                var userInIndividual = false;
+                individualMessages.forEach((m) => {
+                  if ((message.toUser.id == m.toUser.id && message.fromUser.id == m.fromUser.id) || (message.toUser.id == m.fromUser.id && message.fromUser.id == m.toUser.id)){
+                    userInIndividual = true;
+                  }
+                })
+
+                if (!userInIndividual){
+                  individualMessages.push(message);
+                }
+              })
+
+              this.messagePreviews = individualMessages;
+
+            }
+
+          });
+
+        });
+
         
-    // now filter down to what we want?
-
-    // allMessages = 
-
-    let sortedMessages = allMessages.sort((a,b) => a.sentDate.getTime() - b.sentDate.getTime());
-
-    console.log(sortedMessages)
-
-    this.messagePreviews = sortedMessages;
-
+      });
+      
+    });
 
   }
 
