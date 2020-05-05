@@ -54,7 +54,7 @@ export class MessagesComponent implements OnInit {
                 }
               })
 
-              this.messagePreviews = individualMessages;
+              this.messagePreviews = individualMessages.sort((b,a) => a.sentDate - b.sentDate);
 
             }
 
