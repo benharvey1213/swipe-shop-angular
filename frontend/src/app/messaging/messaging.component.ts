@@ -55,7 +55,6 @@ export class MessagingComponent implements OnInit, AfterViewChecked {
     }
 
     // get our messages from the database
-    // console.log(this.internalInteractionService.viewingUser)
     try {
       this.pullMessages();
       this.updateMessageArrays();
@@ -67,47 +66,34 @@ export class MessagingComponent implements OnInit, AfterViewChecked {
 
   pullMessages(){
     this.messages = [];
-    var allMessages = [];
-
-    // console.log(this.cookieService.get('userId'), this.cookieService.get('viewingUserId'))
 
     this.db.collection('messages').ref.orderBy('time', 'desc').get().then(res => {
-
       res.forEach(message => {
-          var userTo = null;
-          var userFrom = null;
-
-          this.db.collection('users').ref.where('username', '==', message.data()['userTo']).get().then(res => {
-            res.forEach(user => {
-              userTo = new UserProfile(user.data()['userId'], user.data()['username'], user.data()['profilePictureUrl'], user.data()['location'], [])
-            })
-  
-            this.db.collection('users').ref.where('username', '==', message.data()['userFrom']).get().then(res => {
-              res.forEach(user => {
-                userFrom = new UserProfile(user.data()['userId'], user.data()['username'], user.data()['profilePictureUrl'], user.data()['location'], [])
-              })
-
-              if ((message.data()['userFrom'] == this.cookieService.get('username') && message.data()['userTo'] == this.cookieService.get('viewingUserId'))
-              || (message.data()['userTo'] == this.cookieService.get('username')  && message.data()['userFrom'] == this.cookieService.get('viewingUserId'))){
-
-                this.messages.push(new Message(userTo, userFrom, message.data()['messageBody'], message.data()['time'].toDate(), message.data()['attachmentUrl']))
-
-              }
-
-  
-              
-            });
+        var toUser;
+        this.db.collection('users').ref.where('username', '==', message.data()['userTo']).get().then(res => {
+          res.forEach(user => {
+            toUser = new UserProfile(user.data()['userId'], user.data()['username'], user.data()['profilePictureUrl'], '', [])
           });
 
-      })
+          var fromUser;
+          this.db.collection('users').ref.where('username', '==', message.data()['userFrom']).get().then(res => {
+            res.forEach(user => {
+              fromUser = new UserProfile(user.data()['userId'], user.data()['username'], user.data()['profilePictureUrl'], '', [])
+            });
 
-      // this.messages = allMessages;
-      
-      // this.messages = allMessages.sort((b,a) => (a.sentDate - b.sentDate));
+            if (toUser.username == this.cookieService.get('username') || fromUser.username == this.cookieService.get('username')){
 
+              if (toUser.id == this.cookieService.get('viewingUserId') || fromUser.id == this.cookieService.get('viewingUserId')){
+                let m = new Message(toUser, fromUser, message.data()['messageBody'], message.data()['time'].toDate(), message.data()['attachmentUrl']);
+  
+                this.messages.unshift(m);
+              }
+
+            }
+          });
+        });
+      });
     });
-
-
   }
 
   updateMessageArrays(){
