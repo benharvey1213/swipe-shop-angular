@@ -13,42 +13,31 @@ import { UserProfile } from '../user-profile';
 })
 export class LikesComponent implements OnInit {
 
-  // dataInteractionService = new DataInteractionService();
   listingObjects : ListingObject[] = [];
 
   constructor(private router : Router, private cookieService : CookieService, private db : AngularFirestore, private dataInteractionService : DataInteractionService) { }
 
   ngOnInit(): void {
-    // this.listingObjects = this.dataInteractionService.pullLikes();
-    this.db.collection<any>('views').ref.where('username', '==', this.cookieService.get('username'))
-        .get()
-        .then(res => {
-          if (res.docs.length == 0){
+    this.db.collection('views').ref.where('username', '==', this.cookieService.get('username')).get().then(res => {
+      res.forEach(view => {
+        if (view.data()['liked'] == true){
+          this.db.collection('products').ref.get().then(res => {
+            res.forEach(product => {
+              if (product.data()['productId'] == view.data()['productId']){
+                var listingObj = new ListingObject(product.data()['price'], product.data()['location'], product.data()['name'], product.data()['photoUrl'], null)
 
-          } else {
-            res.forEach(view => {
-              if (view.data()['liked']){
-                this.db.collection<any>('products').ref.get().then(res => {
-                  res.forEach(product => {
-                    if (product.data()['productId'] == view.data()['productId']){
-                      var listingObj = new ListingObject(product.data()['price'], product.data()['location'], product.data()['name'], product.data()['photoUrl'], null)
-
-                      this.db.collection<any>('users').ref.where('username', '==', product.data()['owner']).get().then(res => {
-                        res.forEach(profile => {
-                          listingObj.userProfile = new UserProfile(profile.data()['userId'], profile.data()['username'], profile.data()['profilePictureUrl'], profile.data()['location'], [])
-                        })
-
-                        this.listingObjects.push(listingObj);
-                      })
-                    }
+                this.db.collection('users').ref.where('username', '==', product.data()['owner']).get().then(res => {
+                  res.forEach(profile => {
+                    listingObj.userProfile = new UserProfile(profile.data()['userId'], profile.data()['username'], '', '', [])
                   })
+
+                  this.listingObjects.push(listingObj);
                 })
-
               }
-           })
-          } 
+            })
+          })
+        }
       })
-    }
-
-
+    })
+  }
 }
