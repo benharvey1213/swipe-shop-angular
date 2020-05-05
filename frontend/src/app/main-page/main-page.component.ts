@@ -62,6 +62,7 @@ export class MainPageComponent implements OnInit {
   }
 
   hate(){
+    console.log(this.cookieService.get('username'))
     let hate = {
       liked : false,
       productId : this.listingObjectIds[0],
