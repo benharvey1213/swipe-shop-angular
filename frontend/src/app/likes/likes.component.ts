@@ -28,7 +28,7 @@ export class LikesComponent implements OnInit {
 
                 this.db.collection('users').ref.where('username', '==', product.data()['owner']).get().then(res => {
                   res.forEach(profile => {
-                    listingObj.userProfile = new UserProfile(profile.data()['userId'], profile.data()['username'], '', '', [])
+                    listingObj.userProfile = new UserProfile(profile.data()['userId'], profile.data()['username'], profile.data()['profilePictureUrl'], profile.data()['location'], [])
                   })
 
                   this.listingObjects.push(listingObj);

@@ -21,6 +21,7 @@ export class ListingPreviewComponent implements OnInit {
   onClicked(){
     this.internalInteractionService.viewingUser = this.listingObject.userProfile;
     this.internalInteractionService.viewingListing = this.listingObject;
+    this.cookieService.set('viewingUserId', this.listingObject.userProfile.id.toString());
     this.internalInteractionService.lastAt = 'likes';
     this.router.navigateByUrl('messaging');
   }

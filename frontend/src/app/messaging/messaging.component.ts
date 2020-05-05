@@ -180,8 +180,6 @@ export class MessagingComponent implements OnInit, AfterViewChecked {
       this.sendActualMessage(this.messageText, '', this.internalInteractionService.viewingUser);
       this.messageText = '';
       this.pullMessages();
-      // this.messages = this.dataInteractionService.pullMessages(this.internalInteractionService.viewingUser);
-
       this.updateMessageArrays();
     }
   }

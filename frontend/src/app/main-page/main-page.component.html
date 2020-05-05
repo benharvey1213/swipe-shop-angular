@@ -5,7 +5,7 @@
     <p>No more listings, sad :(</p>
 </div>
 
-<div class="container" id="optionsContainer">
+<div *ngIf="listingObject != null" class="container" id="optionsContainer">
     <button class="btn" id="hateButton" (click)="hate()">Hate It</button>
     <button class="btn" id="loveButton" (click)="love()">Love It</button>
 </div>
